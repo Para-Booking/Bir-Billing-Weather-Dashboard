@@ -116,6 +116,8 @@ def test_fly_is_compact(client, station):
     st = body["stations"][0]
     assert set(st["values"]) <= {"wind_avg_ms", "wind_gust_ms", "wind_lull_ms", "wind_dir_deg", "wind_dir_var_deg"}
     assert st["trend"]["trend"] == "rising"
+    assert st["air"]["temp_c"] == 20.0 and st["air"]["rh"] == 50
+    assert st["air"]["pressure_change_3h_hpa"] == -2.0
     assert len(r.content) < 4000
 
 

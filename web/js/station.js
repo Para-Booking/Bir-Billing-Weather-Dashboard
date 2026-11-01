@@ -8,7 +8,7 @@
   if (!RANGES.some(([m]) => m === range)) range = 60;
 
   let st = null, tz = 'Asia/Kolkata';
-  let windSeries = null, thermalSeries = null, frames = [];
+  let windSeries = null, airSeries = null, frames = [];
   const charts = {};
 
   /* ---------- small builders ---------- */
@@ -152,66 +152,98 @@
       <div class="age">Speeds in ${label}${windSeries.step_s > 60 ? ', 10-minute summaries' : ''}.</div>`;
   }
 
-  /* ---------- thermals ---------- */
-  function renderThermals(now) {
-    const v = st.values, d = st.derived;
-    const t = v.temp_c;
-    $('thermal-age').textContent = t ? B.ageText(t.ts, now) : '';
-    const tOk = fresh(t, now);
-    const rate = d.temp_change_1h_c;
-    $('thermal-tiles').innerHTML =
-      tile('Temperature', tOk ? `${B.fmt(t.v, 1)}<small> °C</small>` : '–',
-        rate != null ? `${B.signed(rate)} °C in the last hour` : '', tOk ? '' : 'stale') +
-      tile('Dew point', d.dew_point_c != null ? `${B.fmt(d.dew_point_c, 1)}<small> °C</small>` : '–',
-        fresh(v.rh, now) ? `Humidity ${B.fmt(v.rh.v)} %` : '') +
-      tile('Cloud base (estimate)', d.cloud_base_amsl_m != null ? `${d.cloud_base_amsl_m.toLocaleString('en-IN')}<small> m</small>` : '–',
-        d.cloud_base_agl_m != null ? `≈ ${d.cloud_base_agl_m.toLocaleString('en-IN')} m above the station` : '');
+  /* ---------- temperature, humidity, pressure ---------- */
+  function pressureChange(ch) {
+    if (ch == null) return '';
+    return `<span class="${ch <= -1 ? 'delta-down' : ''}">${ch < -0.3 ? '↓' : ch > 0.3 ? '↑' : '→'} ${B.signed(ch)} hPa in 3 h</span>` +
+      (ch <= -2 ? ' · falling fast' : '');
   }
 
-  function renderThermalChart() {
-    if (!thermalSeries) return;
-    const s = thermalSeries.series;
-    const dew = thermalSeries.ts.map((_, i) => {
+  function renderAirTiles(now) {
+    const v = st.values, d = st.derived;
+    const t = v.temp_c, rh = v.rh, p = v.pressure_pa;
+    const newest = Math.max(t?.ts || 0, rh?.ts || 0, p?.ts || 0);
+    $('tph-age').textContent = newest ? B.ageText(newest, now) : '';
+    const rate = d.temp_change_1h_c;
+    $('tph-tiles').innerHTML =
+      tile('Temperature', t ? `${B.fmt(t.v, 1)}<small> °C</small>` : '–',
+        rate != null ? `${B.signed(rate)} °C in the last hour` : '', fresh(t, now) ? '' : 'stale') +
+      tile('Humidity', rh ? `${B.fmt(rh.v)}<small> %</small>` : '–',
+        d.dew_point_c != null ? `Dew point ${B.fmt(d.dew_point_c, 1)} °C` : '', fresh(rh, now) ? '' : 'stale') +
+      tile('Pressure (sea level)', d.pressure_sl_hpa != null ? `${B.fmt(d.pressure_sl_hpa)}<small> hPa</small>` : '–',
+        pressureChange(d.pressure_change_3h_hpa) + (p ? `<br>At station ${B.fmt(p.v / 100)} hPa` : ''),
+        fresh(p, now) ? '' : 'stale');
+
+    // thermals card: what the air means for flying
+    $('thermal-age').textContent = t ? B.ageText(t.ts, now) : '';
+    const spread = t && d.dew_point_c != null ? t.v - d.dew_point_c : null;
+    $('thermal-tiles').innerHTML =
+      tile('Cloud base (estimate)', d.cloud_base_amsl_m != null ? `${d.cloud_base_amsl_m.toLocaleString('en-IN')}<small> m</small>` : '–',
+        d.cloud_base_agl_m != null ? `≈ ${d.cloud_base_agl_m.toLocaleString('en-IN')} m above the station` : '') +
+      tile('Temp / dew point spread', spread != null ? `${B.fmt(spread, 1)}<small> °C</small>` : '–',
+        spread != null ? (spread < 3 ? 'Moist air: low cloud or fog likely' : 'Each 1 °C ≈ 125 m of cloud base') : '') +
+      tile('Warming', rate != null ? `${B.signed(rate)}<small> °C/h</small>` : '–',
+        rate != null ? (rate >= 1.5 ? 'Warming fast: thermals building' : rate <= -1 ? 'Cooling' : 'Steady') : '');
+  }
+
+  function seaLevel(paArr, tArr) {
+    const h = st && st.elevation_m != null ? st.elevation_m : null;
+    return paArr.map((pa, i) => {
+      if (pa == null) return null;
+      if (h == null) return Math.round(pa) / 100;
+      const tc = tArr[i] != null ? tArr[i] : 15;
+      return Math.round(pa / 100 / Math.pow(1 - 0.0065 * h / (tc + 0.0065 * h + 273.15), 5.257) * 10) / 10;
+    });
+  }
+
+  function lineChart(key, elId, readoutId, series, yFmt, readoutText, height = 170, yRange = undefined) {
+    const ts = airSeries.ts;
+    const readout = (i) => {
+      if (i == null || i < 0) i = ts.length - 1;
+      $(readoutId).textContent = i < 0 ? 'No readings in this range.' : `${B.timeText(ts[i], tz)} · ${readoutText(i)}`;
+    };
+    makeChart(key, $(elId), {
+      tzDate, height, legend: { show: false },
+      cursor: { points: { size: 8, width: 2, stroke: css('--surface') }, drag: { x: false, y: false } },
+      scales: { x: { time: true }, y: yRange ? { range: yRange } : {} },
+      axes: axes((u_, vals) => vals.map(yFmt)),
+      series: [{}, ...series.map((x) => ({ label: x.label, stroke: x.color, width: 2, points: { show: false } }))],
+      hooks: { setCursor: [(c) => readout(c.cursor.idx)] },
+    }, [ts, ...series.map((x) => x.data)]);
+    readout(null);
+  }
+
+  function renderAirCharts() {
+    if (!airSeries) return;
+    const s = airSeries.series;
+    const dew = airSeries.ts.map((_, i) => {
       const tc = s.temp_c[i], rh = s.rh[i];
       if (tc == null || rh == null || rh <= 0) return null;
       const g = Math.log(rh / 100) + 17.62 * tc / (243.12 + tc);
       return Math.round(243.12 * g / (17.62 - g) * 10) / 10;
     });
+    const press = seaLevel(s.pressure_pa, s.temp_c);
     const c1 = css('--series-1'), c2 = css('--series-2');
-    $('thermal-legend').innerHTML =
+    $('temp-legend').innerHTML =
       `<span><i class="key" style="background:${c1}"></i>Temperature</span><span><i class="key" style="background:${c2}"></i>Dew point</span>`;
-    const readout = (i) => {
-      if (i == null || i < 0) i = thermalSeries.ts.length - 1;
-      if (i < 0) { $('thermal-readout').textContent = ''; return; }
-      $('thermal-readout').textContent =
-        `${B.timeText(thermalSeries.ts[i], tz)} · temperature ${B.fmt(s.temp_c[i], 1)} °C · dew point ${B.fmt(dew[i], 1)} °C`;
-    };
-    makeChart('thermal', $('thermal-chart'), {
-      tzDate, height: 200, legend: { show: false },
-      cursor: { points: { size: 8, width: 2, stroke: css('--surface') }, drag: { x: false, y: false } },
-      scales: { x: { time: true } },
-      axes: axes((u_, vals) => vals.map((x) => x + '°')),
-      series: [{},
-        { label: 'Temperature', stroke: c1, width: 2, points: { show: false } },
-        { label: 'Dew point', stroke: c2, width: 2, points: { show: false } }],
-      hooks: { setCursor: [(c) => readout(c.cursor.idx)] },
-    }, [thermalSeries.ts, s.temp_c, dew]);
-    readout(null);
+    lineChart('temp', 'temp-chart', 'temp-readout',
+      [{ label: 'Temperature', color: c1, data: s.temp_c }, { label: 'Dew point', color: c2, data: dew }],
+      (x) => x + '°', (i) => `temperature ${B.fmt(s.temp_c[i], 1)} °C · dew point ${B.fmt(dew[i], 1)} °C`, 190);
+    lineChart('rh', 'rh-chart', 'rh-readout', [{ label: 'Humidity', color: c1, data: s.rh }],
+      (x) => x + '%', (i) => `humidity ${B.fmt(s.rh[i])} %`);
+    lineChart('press', 'press-chart', 'press-readout', [{ label: 'Pressure', color: c1, data: press }],
+      (x) => (Number.isInteger(x) ? x.toFixed(0) : x.toFixed(1)), (i) => `${B.fmt(press[i], 1)} hPa (sea level)`, 170,
+      // at least 4 hPa tall, so sensor noise doesn't look like a weather change
+      (u_, min, max) => {
+        if (min == null || max == null) return [1000, 1020];
+        const mid = (min + max) / 2, half = Math.max((max - min) / 2 * 1.1, 2);
+        return [mid - half, mid + half];
+      });
   }
 
-  /* ---------- pressure, rain, sun, air, status ---------- */
+  /* ---------- rain, sun, air quality, status ---------- */
   function renderSmallCards(now) {
     const v = st.values, d = st.derived;
-    const p = v.pressure_pa;
-    $('press-age').textContent = p ? B.ageText(p.ts, now) : '';
-    const ch = d.pressure_change_3h_hpa;
-    const chText = ch == null ? '' :
-      `<span class="${ch <= -1 ? 'delta-down' : ''}">${ch < -0.3 ? '↓' : ch > 0.3 ? '↑' : '→'} ${B.signed(ch)} hPa in 3 h</span>` +
-      (ch <= -2 ? ' · falling fast' : '');
-    $('press-tiles').innerHTML = p
-      ? tile('Sea level', d.pressure_sl_hpa != null ? `${B.fmt(d.pressure_sl_hpa)}<small> hPa</small>` : '–', chText, fresh(p, now) ? '' : 'stale') +
-        tile('At station', `${B.fmt(p.v / 100)}<small> hPa</small>`)
-      : '<p class="empty">No pressure readings.</p>';
 
     const r = v.rain_mm;
     $('rain-card').hidden = !r;
@@ -302,7 +334,7 @@
       st.last_seen ? `updated ${B.ageText(st.last_seen, now)}` : 'no readings yet'].filter(Boolean).join(' · ');
     $('fly-link').href = `/fly#${encodeURIComponent(st.slug)}`;
     renderWindNow(now);
-    renderThermals(now);
+    renderAirTiles(now);
     renderSmallCards(now);
     renderCamera(now);
   }
@@ -310,8 +342,10 @@
   async function loadNow() {
     try {
       const r = await B.getJSON(`/api/v1/stations/${encodeURIComponent(slug)}`);
+      const first = !st;
       st = r.station; tz = r.tz || tz;
       renderAll();
+      if (first) renderAirCharts(); // sea-level pressure needs the station's elevation
     } catch (e) {
       if (!st) $('name').textContent = 'Station not found';
     }
@@ -322,12 +356,12 @@
       const base = `/api/v1/stations/${encodeURIComponent(slug)}`;
       const [w, t, f] = await Promise.all([
         B.getJSON(`${base}/series?minutes=${range}&metrics=wind_avg_ms,wind_gust_ms,wind_lull_ms,wind_dir_deg`),
-        B.getJSON(`${base}/series?minutes=${range}&metrics=temp_c,rh`),
+        B.getJSON(`${base}/series?minutes=${range}&metrics=temp_c,rh,pressure_pa`),
         B.getJSON(`${base}/frames?minutes=120`),
       ]);
-      windSeries = w; thermalSeries = t; frames = f.frames;
+      windSeries = w; airSeries = t; frames = f.frames;
       renderWindChart();
-      renderThermalChart();
+      renderAirCharts();
       if (st) renderCamera(Date.now() / 1000);
     } catch (e) { /* keep what we have; next poll retries */ }
   }
@@ -350,5 +384,5 @@
   B.poll(loadNow, 30000);
   B.poll(loadSeries, 60000);
   setInterval(() => renderAll(), 10000);
-  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { renderWindChart(); renderThermalChart(); });
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { renderWindChart(); renderAirCharts(); });
 })();

@@ -149,6 +149,8 @@ a { color: inherit; }
 .station-card .big small { font-size: 16px; font-weight: 600; color: var(--ink-2); }
 .station-card .gust { font-size: 18px; font-weight: 700; }
 .station-card .row { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; font-size: 14px; }
+.station-card .air { font-size: 17px; }
+.station-card .air b { font-weight: 800; }
 .station-card .thumb { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 10px; background: var(--grid); }
 .spark { width: 100%; height: 44px; display: block; }
 .spark .wash { fill: var(--series-1-wash); }
@@ -175,6 +177,9 @@ a { color: inherit; }
 .key.band-key { height: 10px; background: var(--series-1-wash); border: 1px solid var(--series-1); }
 .chart { width: 100%; min-height: 200px; }
 .chart.dir { min-height: 150px; }
+.air-charts { display: grid; gap: 14px; margin-top: 12px; grid-template-columns: 1fr; }
+@media (min-width: 900px) { .air-charts { grid-template-columns: repeat(3, 1fr); } }
+.chart-title { margin: 0 0 2px; font-size: 14px; font-weight: 700; }
 .cam img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 10px; background: var(--grid); display: block; }
 .cam input[type="range"] { width: 100%; margin-top: 10px; min-height: 32px; }
 .cam .when { font-size: 14px; font-weight: 600; margin-top: 4px; }

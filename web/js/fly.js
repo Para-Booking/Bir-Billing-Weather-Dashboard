@@ -64,6 +64,22 @@
     return s + '</svg>';
   }
 
+  /* One line: temperature · humidity · sea-level pressure with its 3 h trend. */
+  function airLine(air, nowS) {
+    if (!air) return '';
+    const ch = air.pressure_change_3h_hpa;
+    const arrow = ch == null ? '' : ch < -0.3 ? '↓' : ch > 0.3 ? '↑' : '→';
+    const parts = [
+      air.temp_c != null ? `${B.fmt(air.temp_c, 1)}°` : null,
+      air.rh != null ? `${B.fmt(air.rh)}%` : null,
+      air.pressure_sl_hpa != null ? `${B.fmt(air.pressure_sl_hpa)} hPa ${arrow}` : null,
+    ].filter(Boolean);
+    if (!parts.length) return '';
+    const age = B.ageSeconds(air.ts, nowS);
+    const old = age > 10 * 60 ? ` <span class="old">· ${Math.round(age / 60)} min old</span>` : '';
+    return `<div class="airline">${parts.join(' · ')}${old}</div>`;
+  }
+
   function current() {
     const st = stations()[index];
     if (!st) return null;
@@ -115,6 +131,7 @@
     $('main').innerHTML = `
       <div class="speed"><span class="num">${B.fmtSpeed(avg.v)}</span><span class="unit">${label}</span></div>
       <div class="gust"><small>GUST </small>${B.fmtSpeed(gust?.v)}</div>
+      ${airLine(st.air, nowS)}
       <div class="lower">
         ${arrowSvg(dir)}
         <div class="facts">
@@ -160,6 +177,9 @@
       text += ` ${B.UNITS[u].spoken}.`;
       if (dir != null) text += ` From ${B.spokenPoint(dir)}.`;
       if (st.trend) text += ` ${st.trend.trend}.`;
+      if (st.air && st.air.temp_c != null && B.ageSeconds(st.air.ts) < 10 * 60) {
+        text += ` Temperature ${Math.round(st.air.temp_c)} degrees.`;
+      }
     }
     speechSynthesis.cancel();
     const msg = new SpeechSynthesisUtterance(text);

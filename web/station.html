@@ -49,6 +49,30 @@
       </details>
     </section>
 
+    <section class="card wide" aria-labelledby="h-tph">
+      <h2 id="h-tph">Temperature, humidity &amp; pressure <span class="age" id="tph-age"></span></h2>
+      <div class="tiles" id="tph-tiles"></div>
+      <div class="air-charts">
+        <div>
+          <h3 class="chart-title">Temperature</h3>
+          <div class="legend" id="temp-legend"></div>
+          <div class="age" id="temp-readout"></div>
+          <div class="chart" id="temp-chart"></div>
+        </div>
+        <div>
+          <h3 class="chart-title">Humidity</h3>
+          <div class="age" id="rh-readout"></div>
+          <div class="chart" id="rh-chart"></div>
+        </div>
+        <div>
+          <h3 class="chart-title">Pressure, sea level</h3>
+          <div class="age" id="press-readout"></div>
+          <div class="chart" id="press-chart"></div>
+        </div>
+      </div>
+      <div class="age">Charts use the time range chosen under Wind history.</div>
+    </section>
+
     <section class="card cam" id="cam-card" aria-labelledby="h-cam">
       <h2 id="h-cam">Live camera <span class="age" id="cam-age"></span></h2>
       <div id="cam-body"><p class="empty">No camera photos yet.</p></div>
@@ -57,14 +81,6 @@
     <section class="card" aria-labelledby="h-thermal">
       <h2 id="h-thermal">Thermals &amp; clouds <span class="age" id="thermal-age"></span></h2>
       <div class="tiles" id="thermal-tiles"></div>
-      <div class="legend" id="thermal-legend"></div>
-      <div class="age" id="thermal-readout"></div>
-      <div class="chart" id="thermal-chart"></div>
-    </section>
-
-    <section class="card" aria-labelledby="h-press">
-      <h2 id="h-press">Pressure <span class="age" id="press-age"></span></h2>
-      <div class="tiles" id="press-tiles"></div>
     </section>
 
     <section class="card" id="rain-card" aria-labelledby="h-rain">

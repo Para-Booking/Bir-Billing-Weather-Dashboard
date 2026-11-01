@@ -50,7 +50,8 @@ def weather(st: dict, ts: float) -> dict:
     temp = 9 + 11 * max(0.0, math.sin(math.pi * (h - 7) / 14)) + st["_temp"] + rnd.gauss(0, 0.2)
     rh = max(25.0, min(98.0, 85 - 45 * day + rnd.gauss(0, 2)))
     pressure_sl = 1012 + 3 * math.sin(ts / 86400 * 2 * math.pi / 3)
-    station_pa = pressure_sl * 100 * (1 - 0.0065 * st["elevation_m"] / (temp + 0.0065 * st["elevation_m"] + 273.15)) ** 5.257
+    # fixed 15 °C reference: real station pressure doesn't swing with the day's temperature
+    station_pa = pressure_sl * 100 * (1 - 0.0065 * st["elevation_m"] / (15 + 0.0065 * st["elevation_m"] + 273.15)) ** 5.257
     reading = {
         "ts": datetime.fromtimestamp(ts, timezone.utc).isoformat(),
         "temp_c": round(temp, 2), "rh": round(rh, 1), "pressure_pa": round(station_pa, 1),

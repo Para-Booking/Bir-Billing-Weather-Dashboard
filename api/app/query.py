@@ -213,9 +213,25 @@ def station(slug: str):
         return {"now": int(now), "tz": config.LOCAL_TZ, "station": summarize(conn, st, now)}
 
 
+def _air(conn, st: dict, now: float) -> Optional[dict]:
+    """Temperature, humidity and sea-level pressure with its 3-hour change."""
+    vals = latest_values(conn, st["id"], now, ("temp_c", "rh", "pressure_pa"))
+    if not vals:
+        return None
+    d = _derived(conn, st, vals, now)
+    return {
+        "ts": max(v["ts"] for v in vals.values()),
+        "temp_c": _r(vals["temp_c"]["v"], 1) if "temp_c" in vals else None,
+        "rh": _r(vals["rh"]["v"], 0) if "rh" in vals else None,
+        "pressure_sl_hpa": d.get("pressure_sl_hpa"),
+        "pressure_change_3h_hpa": d.get("pressure_change_3h_hpa"),
+    }
+
+
 @router.get("/fly")
 def fly():
-    """Compact payload for flight mode: wind only, last 30 minutes."""
+    """Compact payload for flight mode: wind (last 30 minutes) plus one line
+    of temperature, humidity and pressure."""
     now = time.time()
     wind_fields = ("wind_avg_ms", "wind_gust_ms", "wind_lull_ms", "wind_dir_deg", "wind_dir_var_deg")
     out = []
@@ -231,6 +247,7 @@ def fly():
                 "values": {k: {"v": _r(v["v"], 1), "ts": v["ts"]} for k, v in vals.items()},
                 "trend": wind_trend(conn, st["id"], w["ts"]) if w else None,
                 "strip": _wind_strip(conn, st["id"], 30, now),
+                "air": _air(conn, st, now),
             })
     return {"now": int(now), "stations": out}
 

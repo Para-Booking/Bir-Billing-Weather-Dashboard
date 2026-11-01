@@ -16,7 +16,14 @@
     const u = B.UNITS[B.unit()].label;
     const d = st.derived;
     const band = windStale ? null : B.band(avg?.v, gust?.v, st.bands_kmh);
-    const temp = v.temp_c && !B.isStale(v.temp_c.ts, now) ? `${B.fmt(v.temp_c.v, 1)} °C` : '–';
+    const ok = (x) => x && !B.isStale(x.ts, now);
+    const ch = d.pressure_change_3h_hpa;
+    const arrow = ch == null ? '' : ch < -0.3 ? ' ↓' : ch > 0.3 ? ' ↑' : ' →';
+    const air = [
+      ok(v.temp_c) ? `<b>${B.fmt(v.temp_c.v, 1)} °C</b>` : null,
+      ok(v.rh) ? `${B.fmt(v.rh.v)} %` : null,
+      ok(v.pressure_pa) && d.pressure_sl_hpa != null ? `${B.fmt(d.pressure_sl_hpa)} hPa${arrow}` : null,
+    ].filter(Boolean).join(' · ') || 'No temperature data';
     const base = d.cloud_base_amsl_m ? `Cloud base ≈ ${d.cloud_base_amsl_m.toLocaleString('en-IN')} m` : '';
     const elev = st.elevation_m != null ? ` · ${Math.round(st.elevation_m).toLocaleString('en-IN')} m` : '';
 
@@ -35,7 +42,8 @@
       </div>
       <div class="row">${B.bandHtml(band)}<span class="trend">${windStale ? '' : B.trendText(d.wind_trend)}</span></div>
       ${B.sparkSvg(st.wind_strip.ts, st.wind_strip.avg)}
-      <div class="row"><span>${temp}</span><span>${base}</span></div>
+      <div class="air">${air}</div>
+      ${base ? `<div class="row"><span>${base}</span></div>` : ''}
       ${st.frame ? `<img class="thumb" loading="lazy" src="${B.esc(st.frame.url)}" alt="Latest camera view at ${B.esc(st.name)}, ${B.timeText(st.frame.ts, tz)}">` : ''}
     </a>`;
   }

@@ -59,12 +59,14 @@ button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
 }
 
 /* main readout */
-.main { display: grid; grid-template-rows: auto auto 1fr; min-height: 0; align-content: start; gap: 1dvh; }
+.main { display: grid; grid-template-rows: auto auto auto 1fr; min-height: 0; align-content: start; gap: 1dvh; }
 .speed { display: flex; align-items: baseline; justify-content: center; gap: 8px; line-height: 0.85; }
 .speed .num { font-size: min(27dvh, 46vw); font-weight: 900; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
 .speed .unit { font-size: clamp(20px, 6vw, 30px); font-weight: 900; }
 .gust { text-align: center; font-size: min(8dvh, 12vw); font-weight: 900; line-height: 1; }
 .gust small { font-size: 0.55em; letter-spacing: 0.06em; }
+.airline { text-align: center; font-size: clamp(20px, 6vw, 30px); font-weight: 900; font-variant-numeric: tabular-nums; }
+.airline .old { font-size: 0.7em; }
 .lower { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; min-height: 0; }
 .arrow { width: min(20dvh, 36vw); height: min(20dvh, 36vw); }
 .arrow .rim { fill: none; stroke: var(--fg); stroke-width: 6; }
@@ -111,10 +113,11 @@ button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
   .station .dots { display: none; }
   .station .name { font-size: 7dvh; }
   .alert, .age-row { font-size: 6dvh; padding: 4px 8px; }
-  .main { grid-template-columns: 1.1fr 1fr; grid-template-rows: auto auto; align-content: center; gap: 0 16px; }
+  .main { grid-template-columns: 1.1fr 1fr; grid-template-rows: auto auto auto; align-content: center; gap: 0 16px; }
   .speed .num { font-size: 32dvh; }
   .gust { font-size: 9dvh; }
-  .lower { grid-row: 1 / span 2; grid-column: 2; }
+  .lower { grid-row: 1 / span 3; grid-column: 2; }
+  .airline { font-size: 6dvh; margin-top: 1dvh; }
   .arrow { width: 30dvh; height: 30dvh; }
   .dirtext, .trendword, .bandblock { font-size: 6dvh; }
   .facts { gap: 1.5dvh; }
