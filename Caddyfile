@@ -1,0 +1,29 @@
+{$SITE_ADDRESS} {
+	encode zstd gzip
+
+	handle /api/* {
+		reverse_proxy api:8000
+	}
+
+	handle_path /media/* {
+		root * /appdata/media
+		header Cache-Control "public, max-age=604800, immutable"
+		file_server
+	}
+
+	handle {
+		root * /srv/web
+		@station path_regexp ^/s/[a-z0-9-]+/?$
+		rewrite @station /station.html
+		try_files {path} {path}.html {path}/index.html
+		header /sw.js Cache-Control "no-cache"
+		header *.html Cache-Control "no-cache"
+		file_server
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+	}
+}

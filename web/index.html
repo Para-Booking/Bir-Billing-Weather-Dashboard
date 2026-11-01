@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bir Billing Wind</title>
+<meta name="description" content="Live wind and weather from stations around Bir Billing, for paragliding pilots.">
+<meta name="theme-color" content="#0b0b0b">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="/">Bir Billing Wind <small>live stations</small></a>
+    <span class="spacer"></span>
+    <div class="seg" id="units" role="group" aria-label="Wind units"></div>
+    <a class="fly-btn" href="/fly">✈ Flight mode</a>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="grid" id="stations" aria-live="polite">
+    <p class="empty">Loading stations…</p>
+  </div>
+</main>
+
+<footer class="disclaimer">
+  Live observations only, not a flying decision. Always assess conditions yourself.
+</footer>
+
+<script src="/js/common.js"></script>
+<script src="/js/overview.js"></script>
+</body>
+</html>
