@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Flight mode · Bir Billing Wind</title>
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="BB Wind">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<link rel="stylesheet" href="/css/fly.css">
+<script>
+  try { if (localStorage.getItem('bbw.flyInvert') === '1') document.documentElement.classList.add('invert'); } catch (e) {}
+</script>
+</head>
+<body>
+<div class="fly" id="fly">
+  <div class="head">
+    <button type="button" id="prev" aria-label="Previous station">◀</button>
+    <div class="station">
+      <div class="name" id="name">Bir Billing Wind</div>
+      <div class="dots" id="dots" aria-hidden="true"></div>
+    </div>
+    <button type="button" id="next" aria-label="Next station">▶</button>
+  </div>
+
+  <div id="age" aria-live="polite"></div>
+
+  <div class="main" id="main">
+    <div class="nodata">Loading…</div>
+  </div>
+
+  <div class="strip-wrap" id="strip-wrap"></div>
+
+  <div>
+    <div class="controls">
+      <button type="button" id="speak">🔊 Speak</button>
+      <button type="button" id="auto" aria-pressed="false" aria-label="Speak every 2 minutes">Auto</button>
+      <button type="button" id="unit" aria-label="Change units">km/h</button>
+      <button type="button" id="invert" aria-label="Invert colours">◐</button>
+      <button type="button" class="exit" id="exit" aria-label="Hold to exit flight mode"><i class="fill"></i><span>Hold to exit</span></button>
+    </div>
+    <div class="wake" id="wake"></div>
+  </div>
+</div>
+
+<script src="/js/common.js"></script>
+<script src="/js/fly.js"></script>
+</body>
+</html>

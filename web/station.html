@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Station · Bir Billing Wind</title>
+<meta name="theme-color" content="#0b0b0b">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<link rel="stylesheet" href="/vendor/uPlot.min.css">
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="/">← Bir Billing Wind</a>
+    <span class="spacer"></span>
+    <div class="seg" id="units" role="group" aria-label="Wind units"></div>
+    <a class="fly-btn" id="fly-link" href="/fly">✈ Flight mode</a>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="station-head">
+    <h1 id="name">Loading…</h1>
+    <div class="meta" id="meta"></div>
+  </div>
+
+  <div class="stack">
+    <section class="card wide" id="wind-now" aria-labelledby="h-wind">
+      <h2 id="h-wind">Wind now <span class="age" id="wind-age"></span></h2>
+      <div id="wind-body"><p class="empty">Loading…</p></div>
+    </section>
+
+    <section class="card wide" aria-labelledby="h-hist">
+      <h2 id="h-hist">Wind history</h2>
+      <div class="chips" id="range" role="group" aria-label="Time range"></div>
+      <div class="legend" id="wind-legend"></div>
+      <div class="age" id="wind-readout" aria-live="polite"></div>
+      <div class="chart" id="wind-chart"></div>
+      <div id="dir-wrap">
+        <div class="legend"><span>Direction the wind comes from</span></div>
+        <div class="chart dir" id="dir-chart"></div>
+      </div>
+      <details id="wind-table-wrap">
+        <summary>Show readings as a table</summary>
+        <div id="wind-table"></div>
+      </details>
+    </section>
+
+    <section class="card cam" id="cam-card" aria-labelledby="h-cam">
+      <h2 id="h-cam">Live camera <span class="age" id="cam-age"></span></h2>
+      <div id="cam-body"><p class="empty">No camera photos yet.</p></div>
+    </section>
+
+    <section class="card" aria-labelledby="h-thermal">
+      <h2 id="h-thermal">Thermals &amp; clouds <span class="age" id="thermal-age"></span></h2>
+      <div class="tiles" id="thermal-tiles"></div>
+      <div class="legend" id="thermal-legend"></div>
+      <div class="age" id="thermal-readout"></div>
+      <div class="chart" id="thermal-chart"></div>
+    </section>
+
+    <section class="card" aria-labelledby="h-press">
+      <h2 id="h-press">Pressure <span class="age" id="press-age"></span></h2>
+      <div class="tiles" id="press-tiles"></div>
+    </section>
+
+    <section class="card" id="rain-card" aria-labelledby="h-rain">
+      <h2 id="h-rain">Rain <span class="age" id="rain-age"></span></h2>
+      <div class="tiles" id="rain-tiles"></div>
+    </section>
+
+    <section class="card" id="sun-card" aria-labelledby="h-sun">
+      <h2 id="h-sun">Sun</h2>
+      <div class="tiles" id="sun-tiles"></div>
+    </section>
+
+    <section class="card" id="air-card" aria-labelledby="h-air" hidden>
+      <h2 id="h-air">Air &amp; haze <span class="age" id="air-age"></span></h2>
+      <div class="tiles" id="air-tiles"></div>
+    </section>
+
+    <section class="card" aria-labelledby="h-status">
+      <h2 id="h-status">Station status</h2>
+      <div class="status-list" id="status"></div>
+    </section>
+  </div>
+</main>
+
+<footer class="disclaimer">
+  Live observations only, not a flying decision. Always assess conditions yourself.
+</footer>
+
+<script src="/vendor/uPlot.iife.min.js"></script>
+<script src="/js/common.js"></script>
+<script src="/js/station.js"></script>
+</body>
+</html>
