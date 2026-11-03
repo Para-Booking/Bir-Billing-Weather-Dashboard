@@ -78,6 +78,16 @@
       <div id="cam-body"><p class="empty">No camera photos yet.</p></div>
     </section>
 
+    <section class="card cam" id="tl-card" aria-labelledby="h-tl" hidden>
+      <h2 id="h-tl">Daily timelapse</h2>
+      <video id="tl-video" controls playsinline preload="metadata"></video>
+      <div class="tl-bar">
+        <label for="tl-day">Day</label>
+        <select id="tl-day"></select>
+        <span id="tl-links"></span>
+      </div>
+    </section>
+
     <section class="card" aria-labelledby="h-thermal">
       <h2 id="h-thermal">Thermals &amp; clouds <span class="age" id="thermal-age"></span></h2>
       <div class="tiles" id="thermal-tiles"></div>

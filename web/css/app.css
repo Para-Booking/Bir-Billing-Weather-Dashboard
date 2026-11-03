@@ -183,6 +183,10 @@ a { color: inherit; }
 .cam img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 10px; background: var(--grid); display: block; }
 .cam input[type="range"] { width: 100%; margin-top: 10px; min-height: 32px; }
 .cam .when { font-size: 14px; font-weight: 600; margin-top: 4px; }
+.cam video { width: 100%; aspect-ratio: 16 / 9; border-radius: 10px; background: #000; display: block; }
+.tl-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 10px; font-size: 14px; }
+.tl-bar select { min-height: 40px; font: inherit; padding: 4px 8px; border-radius: 8px; }
+.tl-bar a { font-weight: 600; }
 table.data { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
 table.data th, table.data td { text-align: right; padding: 4px 6px; border-bottom: 1px solid var(--grid); }
 table.data th:first-child, table.data td:first-child { text-align: left; }

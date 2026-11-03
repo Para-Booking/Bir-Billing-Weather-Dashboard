@@ -5,6 +5,7 @@ services:
     env_file: .env
     volumes:
       - appdata:/data
+      - ./secrets:/secrets:ro   # YouTube/Vimeo upload credentials (not in git)
 
   caddy:
     image: caddy:2.8.4-alpine

@@ -2,6 +2,7 @@
 - delete camera photos older than FRAME_RETENTION_DAYS (hourly)
 - back up the database once a day, keeping the newest BACKUP_KEEP copies
 - optional Telegram message when a station stops sending, and when it's back
+- the nightly camera timelapse (timelapse.py, in its own thread)
 """
 import logging
 import shutil
@@ -12,7 +13,7 @@ from datetime import datetime, timezone
 
 import httpx
 
-from . import config
+from . import config, timelapse
 from .db import connect
 
 log = logging.getLogger("ws.jobs")
@@ -122,4 +123,5 @@ def _loop(stop: threading.Event) -> None:
 def start() -> threading.Event:
     stop = threading.Event()
     threading.Thread(target=_loop, args=(stop,), name="jobs", daemon=True).start()
+    timelapse.start(stop)  # own thread: ffmpeg and uploads can take minutes
     return stop

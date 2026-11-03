@@ -313,3 +313,22 @@ def frames(slug: str, minutes: int = Query(120, ge=1, le=24 * 60)):
             (sid, int(now - minutes * 60)),
         ).fetchall()
     return {"frames": [{"ts": r["ts"], "url": "/media/" + r["path"]} for r in rows]}
+
+
+@router.get("/stations/{slug}/timelapses")
+def timelapses(slug: str):
+    with connect() as conn:
+        sid = _stations(conn, slug)[0]["id"]
+        rows = conn.execute(
+            "SELECT day, path, frames, youtube_url, vimeo_url FROM timelapses "
+            "WHERE station_id = ? ORDER BY day DESC LIMIT 60", (sid,)
+        ).fetchall()
+
+    def link(v):
+        return v if v and v != "-" else None
+
+    return {"timelapses": [
+        {"day": r["day"], "url": "/media/" + r["path"], "frames": r["frames"],
+         "youtube": link(r["youtube_url"]), "vimeo": link(r["vimeo_url"])}
+        for r in rows
+    ]}

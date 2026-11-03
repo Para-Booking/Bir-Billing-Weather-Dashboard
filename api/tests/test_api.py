@@ -167,3 +167,78 @@ def test_wx_helpers():
     r = datetime.fromtimestamp(rise, ZoneInfo("Asia/Kolkata"))
     s = datetime.fromtimestamp(sset, ZoneInfo("Asia/Kolkata"))
     assert (r.hour, s.hour) == (5, 19)
+
+
+def _ffmpeg_on_path():
+    """Use the system ffmpeg, or imageio-ffmpeg's bundled one if installed."""
+    import shutil
+    if shutil.which("ffmpeg"):
+        return True
+    try:
+        import imageio_ffmpeg
+    except ImportError:
+        return False
+    bin_dir = os.path.join(_tmp, "bin")
+    os.makedirs(bin_dir, exist_ok=True)
+    link = os.path.join(bin_dir, "ffmpeg")
+    if not os.path.exists(link):
+        os.symlink(imageio_ffmpeg.get_ffmpeg_exe(), link)
+    os.environ["PATH"] = bin_dir + os.pathsep + os.environ["PATH"]
+    return True
+
+
+def test_timelapse_make_list_and_upload(client, station, monkeypatch):
+    from datetime import timedelta
+    from io import BytesIO
+    from zoneinfo import ZoneInfo
+
+    from app import timelapse
+    if not _ffmpeg_on_path():
+        pytest.skip("no ffmpeg")
+    Image = pytest.importorskip("PIL.Image")
+
+    # 12 photos yesterday (local time), 2 minutes apart
+    day = datetime.now(ZoneInfo(config.LOCAL_TZ)).date() - timedelta(days=1)
+    start = datetime(day.year, day.month, day.day, 10, tzinfo=ZoneInfo(config.LOCAL_TZ)).timestamp()
+    for i in range(12):
+        buf = BytesIO()
+        Image.new("RGB", (320, 180), (20 * i, 100, 200)).save(buf, "JPEG")
+        r = client.post(f"/api/v1/stations/bir-landing/frames?ts={iso(start + i * 120)}".replace("+", "%2B"),
+                        headers=station, files={"frame": ("f.jpg", buf.getvalue(), "image/jpeg")})
+        assert r.status_code == 200, r.text
+
+    # admin only; too few photos on another day
+    assert client.post(f"/api/v1/stations/bir-landing/timelapses?day={day}").status_code == 401
+    r = client.post(f"/api/v1/stations/bir-landing/timelapses?day={day - timedelta(days=3)}", headers=ADMIN)
+    assert r.status_code == 409
+
+    # pretend YouTube and Vimeo are set up; YouTube fails once, then works
+    monkeypatch.setattr(timelapse, "youtube_enabled", lambda: True)
+    monkeypatch.setattr(timelapse, "vimeo_enabled", lambda: True)
+    calls = {"yt": 0}
+
+    def fake_yt(path, title, desc):
+        calls["yt"] += 1
+        assert path.stat().st_size > 1000 and day.isoformat() in title
+        if calls["yt"] == 1:
+            raise RuntimeError("quota")
+        return "https://youtu.be/abc"
+
+    monkeypatch.setattr(timelapse, "upload_youtube", fake_yt)
+    monkeypatch.setattr(timelapse, "upload_vimeo", lambda p, t, d: "https://vimeo.com/1")
+
+    r = client.post(f"/api/v1/stations/bir-landing/timelapses?day={day}", headers=ADMIN)
+    assert r.status_code == 200, r.text
+    assert r.json()["frames"] == 12
+    assert (config.MEDIA_DIR / r.json()["url"][len("/media/"):]).stat().st_size > 1000
+
+    timelapse.upload_pending()
+    tl = client.get("/api/v1/stations/bir-landing/timelapses").json()["timelapses"][0]
+    assert tl["day"] == day.isoformat() and tl["youtube"] is None and tl["vimeo"] == "https://vimeo.com/1"
+    timelapse.upload_pending()  # retry: only YouTube is sent again
+    tl = client.get("/api/v1/stations/bir-landing/timelapses").json()["timelapses"][0]
+    assert tl["youtube"] == "https://youtu.be/abc" and calls["yt"] == 2
+
+    # the nightly job doesn't redo a day that exists; old videos are pruned
+    timelapse.run_once(time.time() + 86400 * 400, set())
+    assert client.get("/api/v1/stations/bir-landing/timelapses").json()["timelapses"] == []
