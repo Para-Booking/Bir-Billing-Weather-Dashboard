@@ -69,6 +69,24 @@ Open http://localhost:8000. Tests: `cd api && ../.venv/bin/python -m pytest -q`.
 
 Updates afterwards: `ssh` in and run `./deploy.sh`.
 
+## Daily timelapse (YouTube and Vimeo)
+
+Every night after 1 am (`TIMELAPSE_HOUR`) the server turns each station's photos from the previous
+day into a video. It's shown under **Daily timelapse** on the station page and kept for 30 days
+(`TIMELAPSE_KEEP_DAYS`). Uploads switch on when credential files are in `/opt/birbilling-ws/secrets/`
+on the server (not in git):
+
+- **YouTube:** `youtube_token.json`. Make it on a computer with a browser:
+  `python tools/youtube_auth.py --from-storage credentials.storage` (reuses the Pi's old login) or
+  `--client-secret client_secret.json` (signs in again). If Google asks again after 7 days, set the
+  Google Cloud project's OAuth consent screen to "In production".
+- **Vimeo:** `vimeo.json` with `access_token`, `client_id`, `client_secret` (the Pi's
+  `vimeo_config.json` works as is).
+
+Failed uploads are retried every hour, up to 6 times. To (re)make a day by hand:
+`curl -X POST "https://ws.birbilling.live/api/v1/stations/<slug>/timelapses?day=2026-11-02&upload=false" -H "Authorization: Bearer $ADMIN_KEY"`
+(`upload=false` shows it on the site only.)
+
 ## API
 
 | Method | Path | Who |
@@ -91,5 +109,6 @@ Interactive docs: `/api/docs`.
 
 - **Readings:** kept forever (about 0.5 M rows per station per year).
 - **Camera photos:** kept for 7 days (`FRAME_RETENTION_DAYS`).
+- **Timelapse videos:** kept for 30 days (`TIMELAPSE_KEEP_DAYS`), about 5 MB each.
 - **Database backup:** nightly into the `appdata` volume, newest 14 kept. Copy one off the server now and then:
   `docker compose cp api:/data/backups ./backups`.

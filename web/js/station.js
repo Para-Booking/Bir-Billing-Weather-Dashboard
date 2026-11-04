@@ -379,10 +379,38 @@
     });
   }
 
+  /* ---------- daily timelapse ---------- */
+  let timelapses = [];
+  function showTimelapse(i) {
+    const t = timelapses[i];
+    if (!t) return;
+    $('tl-video').src = t.url;
+    const links = [];
+    if (t.youtube) links.push(`<a href="${B.esc(t.youtube)}" target="_blank" rel="noopener">YouTube</a>`);
+    if (t.vimeo) links.push(`<a href="${B.esc(t.vimeo)}" target="_blank" rel="noopener">Vimeo</a>`);
+    $('tl-links').innerHTML = links.join(' · ');
+  }
+  async function loadTimelapses() {
+    try {
+      const r = await B.getJSON(`/api/v1/stations/${encodeURIComponent(slug)}/timelapses`);
+      timelapses = r.timelapses || [];
+      if (!timelapses.length) return;
+      const sel = $('tl-day');
+      sel.innerHTML = timelapses.map((t, i) => {
+        const label = new Date(t.day + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+        return `<option value="${i}">${B.esc(label)}</option>`;
+      }).join('');
+      sel.onchange = () => showTimelapse(Number(sel.value));
+      showTimelapse(0);
+      $('tl-card').hidden = false;
+    } catch (e) { /* no timelapse card */ }
+  }
+
   B.unitToggle($('units'), () => { renderAll(); renderWindChart(); });
   rangeChips();
   B.poll(loadNow, 30000);
   B.poll(loadSeries, 60000);
+  loadTimelapses();
   setInterval(() => renderAll(), 10000);
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { renderWindChart(); renderAirCharts(); });
 })();

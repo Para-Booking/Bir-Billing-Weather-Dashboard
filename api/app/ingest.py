@@ -5,14 +5,14 @@ can send the same payload to both. Extra fields here: wind_lull_ms and
 wind_dir_var_deg. Unknown fields are ignored.
 """
 import time
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import List, Optional
 
 from fastapi import APIRouter, File, HTTPException, Query, Request, UploadFile
 from pydantic import BaseModel, Field, ValidationError
 
-from . import config
+from . import config, timelapse
 from .auth import hash_key, new_station_key, require_admin, require_station
 from .db import READING_FIELDS, connect
 
@@ -202,3 +202,20 @@ def delete_station(slug: str, request: Request):
     if not n:
         raise HTTPException(404, "no such station")
     return {"ok": True}
+
+
+@router.post("/stations/{slug}/timelapses")
+def make_timelapse(slug: str, request: Request, day: date, upload: bool = True):
+    """Admin: (re)build one local day's timelapse now, e.g. to test or to redo a day.
+    With upload=false it is only shown on the site, never sent to YouTube/Vimeo."""
+    require_admin(request)
+    with connect() as conn:
+        st = conn.execute("SELECT id, slug, name FROM stations WHERE slug = ?", (slug,)).fetchone()
+    if st is None:
+        raise HTTPException(404, "no such station")
+    with timelapse._lock:
+        row = timelapse.make(dict(st), day, upload=upload)
+    if row is None:
+        raise HTTPException(409, f"fewer than {timelapse.MIN_FRAMES} photos that day")
+    return {"day": row["day"], "url": "/media/" + row["path"], "frames": row["frames"],
+            "uploads": "queued (next hourly run)" if upload else "off"}

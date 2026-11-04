@@ -45,6 +45,19 @@ CREATE TABLE IF NOT EXISTS frames (
     PRIMARY KEY (station_id, ts)
 ) WITHOUT ROWID;
 
+CREATE TABLE IF NOT EXISTS timelapses (
+    station_id    INTEGER NOT NULL REFERENCES stations(id) ON DELETE CASCADE,
+    day           TEXT NOT NULL,      -- local date, YYYY-MM-DD
+    path          TEXT NOT NULL,      -- relative to MEDIA_DIR
+    frames        INTEGER NOT NULL,
+    created       INTEGER NOT NULL,
+    youtube_url   TEXT,               -- NULL = not uploaded yet, '-' = not wanted
+    vimeo_url     TEXT,
+    upload_tries  INTEGER NOT NULL DEFAULT 0,
+    last_error    TEXT,
+    PRIMARY KEY (station_id, day)
+) WITHOUT ROWID;
+
 CREATE TABLE IF NOT EXISTS station_alerts (
     station_id INTEGER PRIMARY KEY REFERENCES stations(id) ON DELETE CASCADE,
     silent     INTEGER NOT NULL DEFAULT 0

@@ -20,6 +20,17 @@ TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
 SILENT_ALERT_MINUTES = int(os.environ.get("SILENT_ALERT_MINUTES", "15"))
 
+# Daily camera timelapse: made after this local hour for the previous day, kept N days.
+TIMELAPSE_HOUR = int(os.environ.get("TIMELAPSE_HOUR", "1"))
+TIMELAPSE_KEEP_DAYS = int(os.environ.get("TIMELAPSE_KEEP_DAYS", "30"))
+TIMELAPSE_FPS = int(os.environ.get("TIMELAPSE_FPS", "30"))
+
+# Upload credentials, mounted read-only from the server's ./secrets folder:
+#   youtube_token.json  (made with tools/youtube_auth.py)          -> YouTube uploads on
+#   vimeo.json          (access_token, client_id, client_secret)   -> Vimeo uploads on
+SECRETS_DIR = Path(os.environ.get("SECRETS_DIR", "/secrets"))
+YOUTUBE_PRIVACY = os.environ.get("YOUTUBE_PRIVACY", "public")  # public | unlisted | private
+
 # Background jobs (cleanup, backups, alerts). Off in tests.
 JOBS_ENABLED = os.environ.get("JOBS_ENABLED", "1") == "1"
 
