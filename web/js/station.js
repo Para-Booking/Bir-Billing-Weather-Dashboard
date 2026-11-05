@@ -379,6 +379,33 @@
     });
   }
 
+  /* ---------- station health (power, restarts, outages) ---------- */
+  function durText(sec) {
+    const m = Math.round(sec / 60);
+    return m < 90 ? `${m} min` : `${Math.floor(m / 60)} h ${m % 60} min`;
+  }
+  async function loadHealth() {
+    try {
+      const h = await B.getJSON(`/api/v1/stations/${encodeURIComponent(slug)}/health?days=7`);
+      const now = h.now;
+      const rows = [];
+      if (h.power) {
+        const bad = !h.power.ok;
+        rows.push(`<span>Power</span><span class="${bad ? 'bad' : ''}">${B.esc(h.power.text)}</span>`);
+      }
+      if (h.last_restart) rows.push(`<span>Last restart</span><span>${B.ageText(h.last_restart, now)}</span>`);
+      rows.push(`<span>Data received, 7 days</span><span class="${h.data_pct < 90 ? 'bad' : ''}">${h.data_pct}%</span>`);
+      $('health-now').innerHTML = rows.join('');
+      const ev = h.events || [];
+      $('health-details').hidden = !ev.length;
+      $('health-events').innerHTML = ev.map((e) => {
+        const when = new Date(e.ts * 1000).toLocaleString(undefined, { weekday: 'short', hour: '2-digit', minute: '2-digit', timeZone: tz });
+        const dur = e.end ? ` · ${durText(e.end - e.ts)}` : '';
+        return `<li class="ev-${B.esc(e.kind)}"><b>${B.esc(when)}</b> ${B.esc(e.text)}${dur}</li>`;
+      }).join('');
+    } catch (e) { /* keep what we have */ }
+  }
+
   /* ---------- daily timelapse ---------- */
   let timelapses = [];
   function showTimelapse(i) {
@@ -411,6 +438,7 @@
   B.poll(loadNow, 30000);
   B.poll(loadSeries, 60000);
   loadTimelapses();
+  B.poll(loadHealth, 60000);
   setInterval(() => renderAll(), 10000);
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { renderWindChart(); renderAirCharts(); });
 })();

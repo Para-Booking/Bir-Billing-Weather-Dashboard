@@ -97,11 +97,14 @@ Failed uploads are retried every hour, up to 6 times. To (re)make a day by hand:
 | GET | `/api/v1/stations/<slug>/series?minutes=&metrics=` | public. 1-minute data up to 48 h, 10-minute summaries beyond |
 | GET | `/api/v1/stations/<slug>/frames?minutes=` | public. Photo list |
 | GET | `/api/v1/fly` | public. Compact wind data for flight mode |
+| POST | `/api/v1/stations/<slug>/events` | station key. `{kind, detail, ts}`, e.g. a camera photo skipped for low power |
+| GET | `/api/v1/stations/<slug>/health?days=7` | public. Power now, last restart, low-voltage periods, outages and events |
 | POST/PATCH/DELETE | `/api/v1/stations…` | admin key |
 
 Reading fields: `ts` (ISO time), `temp_c`, `rh`, `pressure_pa` (station pressure),
 `wind_avg_ms`, `wind_gust_ms`, `wind_lull_ms`, `wind_dir_deg`, `wind_dir_var_deg`,
-`rain_mm` (since the previous report), `pm1`, `pm25`, `pm10`. Speeds in m/s. Every field is
+`rain_mm` (since the previous report), `pm1`, `pm25`, `pm10`, and for station health
+`power_flags` (Raspberry Pi `vcgencmd get_throttled` as a number) and `uptime_s`. Speeds in m/s. Every field is
 optional, and readings already stored for the same station and time are ignored.
 Interactive docs: `/api/docs`.
 

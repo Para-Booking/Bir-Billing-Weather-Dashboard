@@ -2,7 +2,7 @@
    no signal. Pages and assets: network first, cached copy if the network is
    slow (3 s) or down. Live data (/api) and photos (/media) are never cached here;
    flight mode keeps its own last reading. */
-const CACHE = 'bbw-shell-v3';
+const CACHE = 'bbw-shell-v4';
 const SHELL = [
   '/', '/fly', '/station.html',
   '/css/app.css', '/css/fly.css',

@@ -10,6 +10,8 @@ READING_FIELDS = (
     "wind_avg_ms", "wind_gust_ms", "wind_lull_ms",
     "wind_dir_deg", "wind_dir_var_deg",
     "rain_mm", "pm1", "pm25", "pm10",
+    # station health: Raspberry Pi power flags (vcgencmd get_throttled) and seconds since boot
+    "power_flags", "uptime_s",
 )
 
 SCHEMA = f"""
@@ -58,6 +60,14 @@ CREATE TABLE IF NOT EXISTS timelapses (
     PRIMARY KEY (station_id, day)
 ) WITHOUT ROWID;
 
+CREATE TABLE IF NOT EXISTS station_events (
+    station_id INTEGER NOT NULL REFERENCES stations(id) ON DELETE CASCADE,
+    ts         INTEGER NOT NULL,
+    kind       TEXT NOT NULL,     -- e.g. camera_skipped_low_power
+    detail     TEXT
+);
+CREATE INDEX IF NOT EXISTS station_events_ts ON station_events (station_id, ts);
+
 CREATE TABLE IF NOT EXISTS station_alerts (
     station_id INTEGER PRIMARY KEY REFERENCES stations(id) ON DELETE CASCADE,
     silent     INTEGER NOT NULL DEFAULT 0
@@ -91,5 +101,10 @@ def init_db() -> None:
     try:
         conn.execute("PRAGMA journal_mode = WAL")
         conn.executescript(SCHEMA)
+        # Columns added after a database was created (CREATE TABLE IF NOT EXISTS won't add them).
+        have = {r[1] for r in conn.execute("PRAGMA table_info(readings)")}
+        for f in READING_FIELDS:
+            if f not in have:
+                conn.execute(f"ALTER TABLE readings ADD COLUMN {f} REAL")
     finally:
         conn.close()
