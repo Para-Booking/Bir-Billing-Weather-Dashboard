@@ -115,7 +115,8 @@ def timeline(conn, sid: int, start: int, now: float) -> dict:
         f = int(latest["power_flags"])
         power = {"ts": latest["ts"], "flags": f, "hex": hex(f), "text": _flag_words(f),
                  "ok": not (f & (UNDERVOLT_NOW | THROTTLED_NOW))}
-    expected = max(1, int((now - start) // 60))
+    first = rows[0]["ts"] if rows else now   # don't count time before the station existed
+    expected = max(1, int((now - max(start, first)) // 60))
     return {
         "power": power,
         "last_restart": last_boot,
