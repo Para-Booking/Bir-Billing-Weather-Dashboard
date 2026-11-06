@@ -242,3 +242,34 @@ def test_timelapse_make_list_and_upload(client, station, monkeypatch):
     # the nightly job doesn't redo a day that exists; old videos are pruned
     timelapse.run_once(time.time() + 86400 * 400, set())
     assert client.get("/api/v1/stations/bir-landing/timelapses").json()["timelapses"] == []
+
+
+def test_station_health_timeline(client, station):
+    r = client.post("/api/v1/stations", headers=ADMIN, json={"slug": "pi-health", "name": "Health"})
+    key = {"Authorization": "Bearer " + r.json()["api_key"]}
+    t0 = int(time.time()) - 3 * 3600
+    readings = []
+    # 30 min fine, 20 min low voltage, 60 min gap (station off), restart, 30 min fine
+    for m in range(0, 50):
+        flags = 0x50005 if m >= 30 else 0x0
+        readings.append({"ts": iso(t0 + m * 60), "temp_c": 10, "power_flags": flags, "uptime_s": 1000 + m * 60})
+    for m in range(110, 140):
+        readings.append({"ts": iso(t0 + m * 60), "temp_c": 10, "power_flags": 0x50000, "uptime_s": (m - 108) * 60})
+    assert client.post("/api/v1/ingest", headers=key, json={"readings": readings}).status_code == 200
+
+    assert client.post("/api/v1/stations/pi-health/events", headers=station,
+                       json={"kind": "camera_skipped_low_power"}).status_code == 403
+    r = client.post("/api/v1/stations/pi-health/events", headers=key,
+                    json={"ts": iso(t0 + 35 * 60), "kind": "camera_skipped_low_power", "detail": "throttled=0x50005"})
+    assert r.status_code == 200
+    assert client.post("/api/v1/stations/pi-health/events", headers=key,
+                       json={"kind": "Bad Kind!"}).status_code == 422
+
+    h = client.get("/api/v1/stations/pi-health/health?days=1").json()
+    kinds = [e["kind"] for e in h["events"]]
+    assert kinds.count("restart") == 1 and kinds.count("low_voltage") == 1
+    assert "camera_skipped_low_power" in kinds
+    gaps = [e for e in h["events"] if e["kind"] == "no_data"]
+    assert any(e["end"] and (e["end"] - e["ts"]) // 60 == 61 for e in gaps)
+    assert h["power"]["ok"] and h["power"]["text"] == "low voltage earlier since restart"
+    assert abs(h["last_restart"] - (t0 + 108 * 60)) < 2

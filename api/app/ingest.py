@@ -37,6 +37,8 @@ class Reading(BaseModel):
     pm1: Optional[float] = Field(None, ge=0)
     pm25: Optional[float] = Field(None, ge=0)
     pm10: Optional[float] = Field(None, ge=0)
+    power_flags: Optional[int] = Field(None, ge=0, le=0xFFFFFFFF)  # Pi: vcgencmd get_throttled
+    uptime_s: Optional[float] = Field(None, ge=0)                 # Pi: seconds since boot
 
 
 def _epoch(ts: Optional[datetime], now: float) -> int:

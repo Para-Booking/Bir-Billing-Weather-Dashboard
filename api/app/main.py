@@ -6,6 +6,7 @@ from fastapi.responses import FileResponse
 
 from . import config, jobs
 from .db import init_db
+from .health import router as health_router
 from .ingest import router as ingest_router
 from .query import router as query_router
 
@@ -25,6 +26,7 @@ app = FastAPI(title="Bir Billing Wind", lifespan=lifespan, docs_url="/api/docs",
               openapi_url="/api/openapi.json", redoc_url=None)
 app.include_router(ingest_router)
 app.include_router(query_router)
+app.include_router(health_router)
 
 
 @app.get("/api/health")
